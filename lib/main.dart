@@ -56,11 +56,10 @@ class _RadioHomeState extends State<RadioHome> {
 
   void playStation(String streamUrl) async {
     if (Platform.isMacOS) {
-      //todo - play in Flutter with Dart player
       if (player.playing) {
         player.stop();
       }
-      await player.setUrl(streamUrl);
+      player.setUrl(streamUrl);
       player.play();
     } else if (Platform.isAndroid) {
       final int result = await platformPlayStation.invokeMethod('playStation', streamUrl);

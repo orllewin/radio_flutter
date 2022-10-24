@@ -2,7 +2,7 @@
     package="com.example.radio">
 
     <uses-permission android:name="android.permission.INTERNET"/>
-    
+
    <application
         android:label="radio"
         android:name="${applicationName}"
