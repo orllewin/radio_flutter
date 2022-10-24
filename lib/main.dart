@@ -80,36 +80,26 @@ class _RadioHomeState extends State<RadioHome> {
                           primary: true,
                           padding: const EdgeInsets.all(20),
                           itemCount: snapshot.data!.stations?.length,
-                          gridDelegate:
-                              const SliverGridDelegateWithMaxCrossAxisExtent(
+                          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
                             maxCrossAxisExtent: 200,
                             crossAxisSpacing: 12,
                             mainAxisSpacing: 12,
                           ),
                           itemBuilder: (context, index) => GestureDetector(
                               onTap: () {
-                                print(
-                                    "Play: ${snapshot.data!.stations?[index].streamUrl}");
+                                print("Play: ${snapshot.data!.stations?[index].streamUrl}");
                               },
                               child: MouseRegion(
                                 cursor: SystemMouseCursors.click,
                                 child: Container(
                                   padding: const EdgeInsets.all(20),
-                                  color: HexColor(
-                                      snapshot.data!.stations?[index].colour ??
-                                          "#cdcdcd"),
+                                  color: HexColor(snapshot.data!.stations?[index].colour ?? "#cdcdcd"),
                                   child: Stack(
                                     children: [
                                       Container(
                                         decoration: BoxDecoration(
                                           shape: BoxShape.circle,
-                                          image: DecorationImage(
-                                              image: NetworkImage(snapshot
-                                                      .data!
-                                                      .stations?[index]
-                                                      .logoUrl ??
-                                                  ""),
-                                              fit: BoxFit.fill),
+                                          image: DecorationImage(image: NetworkImage(snapshot.data!.stations?[index].logoUrl ?? ""), fit: BoxFit.fill),
                                         ),
                                       ),
                                       // Text(snapshot.data!.stations?[index].title ??
