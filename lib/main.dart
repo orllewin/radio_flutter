@@ -6,8 +6,12 @@ import 'dart:convert';
 import 'package:radio/model/Stations.dart';
 import 'package:radio/extensions/HexColor.dart';
 
+import 'dart:io' show Platform;
+
 import 'dart:async';
 import 'package:flutter/services.dart';
+
+import 'package:just_audio/just_audio.dart';
 
 void main() {
   runApp(const RadioApp());
@@ -38,6 +42,7 @@ class _RadioHomeState extends State<RadioHome> {
   final String appTitle = "Radio";
   late Future<Stations> futureStations;
   static const platformPlayStation = MethodChannel('orllewin.radio/play');
+  final player = AudioPlayer();
 
   Future<Stations> fetchStations() async {
     final response = await http.get(Uri.https('orllewin.uk', 'stations.json'));
@@ -50,9 +55,17 @@ class _RadioHomeState extends State<RadioHome> {
   }
 
   void playStation(String streamUrl) async {
-    print("Play: $streamUrl");
-    final int result = await platformPlayStation.invokeMethod('playStation', streamUrl);
-    print("Play result: $result");
+    if (Platform.isMacOS) {
+      //todo - play in Flutter with Dart player
+      if (player.playing) {
+        player.stop();
+      }
+      await player.setUrl(streamUrl);
+      player.play();
+    } else if (Platform.isAndroid) {
+      final int result = await platformPlayStation.invokeMethod('playStation', streamUrl);
+      print("Play result: $result");
+    }
   }
 
   @override
