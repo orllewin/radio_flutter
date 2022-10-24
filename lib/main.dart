@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:radio/model/Stations.dart';
+import 'package:radio/model/station.dart';
 import 'package:radio/extensions/HexColor.dart';
 
 import 'dart:io' show Platform;
@@ -12,6 +13,7 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 
 import 'package:just_audio/just_audio.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 void main() {
   runApp(const RadioApp());
@@ -43,6 +45,7 @@ class _RadioHomeState extends State<RadioHome> {
   late Future<Stations> futureStations;
   static const platformPlayStation = MethodChannel('orllewin.radio/play');
   final player = AudioPlayer();
+  Station? nowPlaying;
 
   Future<Stations> fetchStations() async {
     final response = await http.get(Uri.https('orllewin.uk', 'stations.json'));
@@ -54,16 +57,43 @@ class _RadioHomeState extends State<RadioHome> {
     }
   }
 
-  void playStation(String streamUrl) async {
+  Future<void> openBrowser(String url) async {
+    if (await canLaunchUrl(Uri.parse(url))) {
+      await launchUrl(Uri.parse(url));
+    } else {
+      print("Can't open urls...");
+    }
+  }
+
+  void playStation(Station station) async {
     if (Platform.isMacOS) {
       if (player.playing) {
         player.stop();
       }
-      player.setUrl(streamUrl);
+      player.setUrl(station.streamUrl ?? "");
+      player.setVolume(1.0);
       player.play();
+
+      setState(() {
+        nowPlaying = station;
+      });
     } else if (Platform.isAndroid) {
-      final int result = await platformPlayStation.invokeMethod('playStation', streamUrl);
+      final int result = await platformPlayStation.invokeMethod('playStation', station.streamUrl ?? "");
       print("Play result: $result");
+    }
+  }
+
+  Icon speakerIcon() {
+    if (player.volume != 0.0) {
+      return const Icon(
+        Icons.volume_off,
+        size: 26.0,
+      );
+    } else {
+      return const Icon(
+        Icons.volume_up,
+        size: 26.0,
+      );
     }
   }
 
@@ -71,6 +101,60 @@ class _RadioHomeState extends State<RadioHome> {
   void initState() {
     super.initState();
     futureStations = fetchStations();
+  }
+
+  List<Widget>? getMenuActions() {
+    if (Platform.isMacOS && player.playing && nowPlaying != null) {
+      return <Widget>[
+        Padding(padding: const EdgeInsets.only(right: 20.0, top: 20.0), child: Text(nowPlaying?.title ?? "")),
+        Padding(
+            padding: const EdgeInsets.only(right: 20.0),
+            child: GestureDetector(
+                onTap: () {
+                  player.stop();
+                  setState(() {
+                    nowPlaying = null;
+                  });
+                },
+                child: const MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: Icon(
+                    Icons.stop_circle,
+                    size: 26.0,
+                  ),
+                ))),
+        Padding(
+            padding: const EdgeInsets.only(right: 20.0),
+            child: GestureDetector(
+                onTap: () {
+                  if (player.volume == 0.0) {
+                    player.setVolume(1.0);
+                  } else {
+                    player.setVolume(0.0);
+                  }
+                  setState(() {});
+                },
+                child: MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: speakerIcon(),
+                ))),
+        Padding(
+            padding: const EdgeInsets.only(right: 20.0),
+            child: GestureDetector(
+                onTap: () {
+                  openBrowser(nowPlaying?.website ?? "");
+                },
+                child: const MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: Icon(
+                    Icons.link,
+                    size: 26.0,
+                  ),
+                )))
+      ];
+    } else {
+      return <Widget>[];
+    }
   }
 
   @override
@@ -84,6 +168,7 @@ class _RadioHomeState extends State<RadioHome> {
           centerTitle: false,
           elevation: 0.0,
           scrolledUnderElevation: 0.0,
+          actions: getMenuActions(),
         ),
         backgroundColor: Colors.white,
         body: SingleChildScrollView(
@@ -108,7 +193,10 @@ class _RadioHomeState extends State<RadioHome> {
                           ),
                           itemBuilder: (context, index) => GestureDetector(
                               onTap: () {
-                                playStation("${snapshot.data!.stations?[index].streamUrl}");
+                                Station? s = snapshot.data?.stations?[index];
+                                if (s != null) {
+                                  playStation(s);
+                                }
                               },
                               child: MouseRegion(
                                 cursor: SystemMouseCursors.click,
@@ -133,6 +221,7 @@ class _RadioHomeState extends State<RadioHome> {
                       return Text('${snapshot.error}');
                     }
 
+                    //todo - improve this loading indicator
                     return const CircularProgressIndicator();
                   })
             ],
