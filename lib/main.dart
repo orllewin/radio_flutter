@@ -1,10 +1,13 @@
-import 'dart:io';
+// ignore_for_file: avoid_print
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:radio/model/Stations.dart';
 import 'package:radio/extensions/HexColor.dart';
+
+import 'dart:async';
+import 'package:flutter/services.dart';
 
 void main() {
   runApp(const RadioApp());
@@ -18,9 +21,7 @@ class RadioApp extends StatelessWidget {
     return MaterialApp(
       title: 'Radio',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.pink,
-      ),
+      theme: ThemeData(primarySwatch: Colors.pink),
       home: const RadioHome(),
     );
   }
@@ -36,6 +37,7 @@ class RadioHome extends StatefulWidget {
 class _RadioHomeState extends State<RadioHome> {
   final String appTitle = "Radio";
   late Future<Stations> futureStations;
+  static const platformPlayStation = MethodChannel('orllewin.radio/play');
 
   Future<Stations> fetchStations() async {
     final response = await http.get(Uri.https('orllewin.uk', 'stations.json'));
@@ -45,6 +47,12 @@ class _RadioHomeState extends State<RadioHome> {
     } else {
       throw Exception('Failed to load stations');
     }
+  }
+
+  void playStation(String streamUrl) async {
+    print("Play: $streamUrl");
+    final int result = await platformPlayStation.invokeMethod('playStation', streamUrl);
+    print("Play result: $result");
   }
 
   @override
@@ -60,6 +68,7 @@ class _RadioHomeState extends State<RadioHome> {
           title: Text(appTitle),
           backgroundColor: Colors.white,
           foregroundColor: Colors.black,
+          systemOverlayStyle: const SystemUiOverlayStyle(statusBarColor: Colors.white, statusBarIconBrightness: Brightness.dark, statusBarBrightness: Brightness.dark),
           centerTitle: false,
           elevation: 0.0,
           scrolledUnderElevation: 0.0,
@@ -87,7 +96,7 @@ class _RadioHomeState extends State<RadioHome> {
                           ),
                           itemBuilder: (context, index) => GestureDetector(
                               onTap: () {
-                                print("Play: ${snapshot.data!.stations?[index].streamUrl}");
+                                playStation("${snapshot.data!.stations?[index].streamUrl}");
                               },
                               child: MouseRegion(
                                 cursor: SystemMouseCursors.click,
