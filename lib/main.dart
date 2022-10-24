@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -41,7 +43,7 @@ class _RadioHomeState extends State<RadioHome> {
     if (response.statusCode == 200) {
       return Stations.fromJson(jsonDecode(response.body));
     } else {
-      throw Exception('Failed to load album');
+      throw Exception('Failed to load stations');
     }
   }
 
@@ -72,46 +74,50 @@ class _RadioHomeState extends State<RadioHome> {
                   future: futureStations,
                   builder: (context, snapshot) {
                     if (snapshot.hasData) {
-                      int stationCount = snapshot.data!.stations!.length;
-                      snapshot.data!.stations?.forEach((station) {
-                        print("Station: ${station.title}");
-                      });
-
                       return GridView.builder(
-                        scrollDirection: Axis.vertical,
-                        shrinkWrap: true,
-                        primary: true,
-                        padding: const EdgeInsets.all(20),
-                        itemCount: snapshot.data!.stations?.length,
-                        gridDelegate:
-                            const SliverGridDelegateWithMaxCrossAxisExtent(
-                          maxCrossAxisExtent: 200,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 12,
-                        ), // The size of the grid box
-                        itemBuilder: (context, index) => Container(
+                          scrollDirection: Axis.vertical,
+                          shrinkWrap: true,
+                          primary: true,
                           padding: const EdgeInsets.all(20),
-                          color: HexColor(
-                              snapshot.data!.stations?[index].colour ??
-                                  "#cdcdcd"),
-                          child: Stack(
-                            children: [
-                              Container(
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  image: DecorationImage(
-                                      image: NetworkImage(snapshot
-                                              .data!.stations?[index].logoUrl ??
-                                          ""),
-                                      fit: BoxFit.fill),
-                                ),
-                              ),
-                              // Text(snapshot.data!.stations?[index].title ??
-                              //     "Unknown")
-                            ],
+                          itemCount: snapshot.data!.stations?.length,
+                          gridDelegate:
+                              const SliverGridDelegateWithMaxCrossAxisExtent(
+                            maxCrossAxisExtent: 200,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
                           ),
-                        ),
-                      );
+                          itemBuilder: (context, index) => GestureDetector(
+                              onTap: () {
+                                print(
+                                    "Play: ${snapshot.data!.stations?[index].streamUrl}");
+                              },
+                              child: MouseRegion(
+                                cursor: SystemMouseCursors.click,
+                                child: Container(
+                                  padding: const EdgeInsets.all(20),
+                                  color: HexColor(
+                                      snapshot.data!.stations?[index].colour ??
+                                          "#cdcdcd"),
+                                  child: Stack(
+                                    children: [
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          image: DecorationImage(
+                                              image: NetworkImage(snapshot
+                                                      .data!
+                                                      .stations?[index]
+                                                      .logoUrl ??
+                                                  ""),
+                                              fit: BoxFit.fill),
+                                        ),
+                                      ),
+                                      // Text(snapshot.data!.stations?[index].title ??
+                                      //     "Unknown")
+                                    ],
+                                  ),
+                                ),
+                              )));
                     } else if (snapshot.hasError) {
                       return Text('${snapshot.error}');
                     }
