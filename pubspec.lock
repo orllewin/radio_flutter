@@ -57,6 +57,15 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.0.5"
+  dart_when:
+    dependency: "direct main"
+    description:
+      path: "."
+      ref: HEAD
+      resolved-ref: "387dc756dd05c0c484de89df08faf04c76a0f788"
+      url: "https://github.com/orllewin/DartWhen.git"
+    source: git
+    version: "1.0.0"
   fake_async:
     dependency: transitive
     description:

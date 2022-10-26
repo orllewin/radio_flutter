@@ -33,6 +33,9 @@ dependencies:
     sdk: flutter
   http: ^0.13.5
 
+  dart_when:
+    git: https://github.com/orllewin/DartWhen.git
+
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.2

@@ -3,9 +3,11 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+
 import 'package:radio/model/Stations.dart';
 import 'package:radio/model/station.dart';
 import 'package:radio/extensions/HexColor.dart';
+import 'package:dart_when/when.dart';
 
 import 'dart:io' show Platform;
 
@@ -42,27 +44,35 @@ class RadioHome extends StatefulWidget {
 
 class _RadioHomeState extends State<RadioHome> {
   final String appTitle = "Radio";
-  late Future<Stations> futureStations;
+  late Future<Stations?> futureStations;
   static const platformPlayStation = MethodChannel('orllewin.radio/play');
   final player = AudioPlayer();
   Station? nowPlaying;
 
-  Future<Stations> fetchStations() async {
+  Future<Stations?> _fetchStations() async {
     final response = await http.get(Uri.https('orllewin.uk', 'stations.json'));
 
-    if (response.statusCode == 200) {
-      return Stations.fromJson(jsonDecode(response.body));
+    Stations? stations = when(response.statusCode, {
+      200: Stations.fromJson(jsonDecode(response.body)), //
+      Else: () => snack("Error loading stations feed")
+    });
+
+    return stations;
+  }
+
+  Future<void> _openBrowser(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
     } else {
-      throw Exception('Failed to load stations');
+      snack("Can't open a browser on this platform");
     }
   }
 
-  Future<void> openBrowser(String url) async {
-    if (await canLaunchUrl(Uri.parse(url))) {
-      await launchUrl(Uri.parse(url));
-    } else {
-      print("Can't open urls...");
-    }
+  void snack(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(message),
+    ));
   }
 
   void playStation(Station station) async {
@@ -100,10 +110,10 @@ class _RadioHomeState extends State<RadioHome> {
   @override
   void initState() {
     super.initState();
-    futureStations = fetchStations();
+    futureStations = _fetchStations();
   }
 
-  List<Widget>? getMenuActions() {
+  List<Widget>? _getMenuActions() {
     if (Platform.isMacOS && player.playing && nowPlaying != null) {
       return <Widget>[
         Padding(padding: const EdgeInsets.only(right: 20.0, top: 20.0), child: Text(nowPlaying?.title ?? "")),
@@ -142,7 +152,7 @@ class _RadioHomeState extends State<RadioHome> {
             padding: const EdgeInsets.only(right: 20.0),
             child: GestureDetector(
                 onTap: () {
-                  openBrowser(nowPlaying?.website ?? "");
+                  _openBrowser(nowPlaying?.website ?? "");
                 },
                 child: const MouseRegion(
                   cursor: SystemMouseCursors.click,
@@ -168,7 +178,7 @@ class _RadioHomeState extends State<RadioHome> {
           centerTitle: false,
           elevation: 0.0,
           scrolledUnderElevation: 0.0,
-          actions: getMenuActions(),
+          actions: _getMenuActions(),
         ),
         backgroundColor: Colors.white,
         body: SingleChildScrollView(
@@ -176,7 +186,7 @@ class _RadioHomeState extends State<RadioHome> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.start,
             children: <Widget>[
-              FutureBuilder<Stations>(
+              FutureBuilder<Stations?>(
                   future: futureStations,
                   builder: (context, snapshot) {
                     if (snapshot.hasData) {
